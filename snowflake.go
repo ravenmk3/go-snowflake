@@ -32,25 +32,33 @@ func (g *Generator) InstanceId() int64 {
 func (g *Generator) NextId() (int64, error) {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
-	now := time.Now().UnixNano() / 1000000
+
+	now := currentTimestamp()
 	if now < g.timestamp {
 		return 0, errors.New("Clock moved backwards")
 	}
-	if now == g.timestamp {
+
+	if now > g.timestamp {
+		g.timestamp = now
+		g.sequence = 0
+	} else { // now == g.timestamp
 		g.sequence = (g.sequence + 1) & SequenceMask
 		if g.sequence == 0 {
 			for now <= g.timestamp {
-				now = time.Now().UnixNano() / 1000000
+				now = currentTimestamp()
 			}
+			g.timestamp = now
 		}
-	} else {
-		g.sequence = 0
 	}
-	g.timestamp = now
+
 	id := int64((now-g.epoch)<<TimestampShift |
 		(g.instance << InstanceIdShift) |
 		(g.sequence))
 	return id, nil
+}
+
+func currentTimestamp() int64 {
+	return time.Now().UnixNano() / 1000000
 }
 
 func NewGeneratorWithEpoch(epoch int64, instanceId int64) (*Generator, error) {

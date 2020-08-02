@@ -10,7 +10,7 @@ func TestSnowflake(t *testing.T) {
 		t.Error(err)
 	}
 	m := map[int64]int64{}
-	for i := 0; i < 1000000; i++ {
+	for i := 0; i < 10000000; i++ {
 		id, err := g.NextId()
 		if err != nil {
 			t.Error(err)
